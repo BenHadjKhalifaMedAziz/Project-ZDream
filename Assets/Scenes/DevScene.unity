@@ -705,7 +705,7 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 55
-  fallingThreshold: -4
+  fallingThreshold: 0
   fallingMovementSpeed: 100
   fallingRunningMovementSpeed: 150
 --- !u!4 &899311515 stripped
@@ -1046,8 +1046,8 @@ Transform:
   m_GameObject: {fileID: 1232822423}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 10, y: 0.124, z: 10}
+  m_LocalPosition: {x: -10.2, y: 0, z: -8.9}
+  m_LocalScale: {x: 30, y: 0.124, z: 30}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
