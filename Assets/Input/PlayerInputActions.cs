@@ -145,6 +145,15 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Aiming"",
+                    ""type"": ""Button"",
+                    ""id"": ""259657e4-bf7e-4100-bc6d-f617e5745ede"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -180,6 +189,17 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""Sprinting"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""15fc3880-957b-4952-857a-5247370c9046"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": ""Hold"",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Aiming"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -195,6 +215,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Actions_Jump = m_Actions.FindAction("Jump", throwIfNotFound: true);
         m_Actions_WalkingToggle = m_Actions.FindAction("WalkingToggle", throwIfNotFound: true);
         m_Actions_Sprinting = m_Actions.FindAction("Sprinting", throwIfNotFound: true);
+        m_Actions_Aiming = m_Actions.FindAction("Aiming", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -313,6 +334,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Actions_Jump;
     private readonly InputAction m_Actions_WalkingToggle;
     private readonly InputAction m_Actions_Sprinting;
+    private readonly InputAction m_Actions_Aiming;
     public struct ActionsActions
     {
         private @PlayerInputActions m_Wrapper;
@@ -320,6 +342,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         public InputAction @Jump => m_Wrapper.m_Actions_Jump;
         public InputAction @WalkingToggle => m_Wrapper.m_Actions_WalkingToggle;
         public InputAction @Sprinting => m_Wrapper.m_Actions_Sprinting;
+        public InputAction @Aiming => m_Wrapper.m_Actions_Aiming;
         public InputActionMap Get() { return m_Wrapper.m_Actions; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -338,6 +361,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Sprinting.started += instance.OnSprinting;
             @Sprinting.performed += instance.OnSprinting;
             @Sprinting.canceled += instance.OnSprinting;
+            @Aiming.started += instance.OnAiming;
+            @Aiming.performed += instance.OnAiming;
+            @Aiming.canceled += instance.OnAiming;
         }
 
         private void UnregisterCallbacks(IActionsActions instance)
@@ -351,6 +377,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Sprinting.started -= instance.OnSprinting;
             @Sprinting.performed -= instance.OnSprinting;
             @Sprinting.canceled -= instance.OnSprinting;
+            @Aiming.started -= instance.OnAiming;
+            @Aiming.performed -= instance.OnAiming;
+            @Aiming.canceled -= instance.OnAiming;
         }
 
         public void RemoveCallbacks(IActionsActions instance)
@@ -378,5 +407,6 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         void OnJump(InputAction.CallbackContext context);
         void OnWalkingToggle(InputAction.CallbackContext context);
         void OnSprinting(InputAction.CallbackContext context);
+        void OnAiming(InputAction.CallbackContext context);
     }
 }

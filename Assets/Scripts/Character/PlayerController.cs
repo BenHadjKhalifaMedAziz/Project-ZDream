@@ -27,6 +27,10 @@ public class PlayerController : MonoBehaviour
     [Header("Camera")]    
     public Transform cameraTarger;
     public CameraController cameraController;
+    [HideInInspector]
+    public bool isAiming;
+    private bool isAimingButtonHold = false;
+
 
     [Header("Movement")]
     public float movementSpeedOffset = 1;
@@ -85,6 +89,9 @@ public class PlayerController : MonoBehaviour
         playerInputActions.Actions.WalkingToggle.performed += x => ToggleWalking();
         playerInputActions.Actions.Sprinting.performed += x => Sprint();
 
+        playerInputActions.Actions.Aiming.performed += x => OnAimingPerformed();
+        playerInputActions.Actions.Aiming.canceled += x => OnAimingCanceled();
+
         gravityDirection = Vector3.down;
 
     }
@@ -126,6 +133,23 @@ public class PlayerController : MonoBehaviour
     }
     #endregion
 
+    #region - Aiming -
+
+    public void OnAimingPerformed()
+    {
+        if (!isAimingButtonHold)
+        {
+            isTargetMode = true ;
+          
+        }
+    }
+
+    public void OnAimingCanceled()
+    {
+        isTargetMode = false;
+    }
+
+    #endregion
 
     #region - Sprinting -
     private void Sprint()
@@ -298,7 +322,6 @@ public class PlayerController : MonoBehaviour
 
         return false;
     }
-
     public void Movement()
     {
         characterAnimator.SetBool("IsTargetMode", isTargetMode);

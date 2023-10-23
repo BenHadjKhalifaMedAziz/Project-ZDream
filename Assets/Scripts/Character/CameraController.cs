@@ -40,6 +40,7 @@ public class CameraController : MonoBehaviour
 
         if (playerController.isTargetMode)
         {
+        
             var currentRotation = playerController.transform.rotation;
 
 
@@ -49,6 +50,7 @@ public class CameraController : MonoBehaviour
             currentRotation = Quaternion.Lerp(currentRotation, Quaternion.Euler(newRotation), settings.CharacterRotationSmoothdamp);
             playerController.transform.rotation = currentRotation;
         }
+
     }
     private void FollowPlayerCaameraTarget()
     {
