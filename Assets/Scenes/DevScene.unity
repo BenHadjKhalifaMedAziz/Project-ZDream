@@ -696,7 +696,7 @@ MonoBehaviour:
   isSprinting: 0
   playerStats:
     Stamina: 100
-    MaxStamina: 0
+    MaxStamina: 100
     StaminaDrain: 4
     StaminaRestore: 8
     StaminaDelay: 2
@@ -705,7 +705,7 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 55
-  fallingThreshold: 0
+  fallingThreshold: -0.07
   fallingMovementSpeed: 100
   fallingRunningMovementSpeed: 150
 --- !u!4 &899311515 stripped
