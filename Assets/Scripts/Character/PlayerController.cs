@@ -4,11 +4,13 @@ using static Models;
 
 public class PlayerController : MonoBehaviour
 {
-    CharacterController characterController;
+    Rigidbody characterRigidBody;
 
-    Animator CharacterAnimator;
+    Animator characterAnimator;
 
-    PlayerInputActions PlayerInputActions;
+
+    PlayerInputActions playerInputActions;
+
     [HideInInspector]
     public Vector2 input_Movement;
     [HideInInspector]
@@ -21,17 +23,20 @@ public class PlayerController : MonoBehaviour
     public PlayerSettingsModel settings;
     public bool isTargetMode;
 
+
     [Header("Camera")]    
     public Transform cameraTarger;
     public CameraController cameraController;
 
     [Header("Movement")]
-    public float movementSpeedOffset = 1 ;
+    public float movementSpeedOffset = 1;
     public float movementSmoothdamp = 0.3f;
+
     public bool isWalking;
+    [HideInInspector]
     public bool isSprinting;
 
-    private float verticalSpeed; 
+    private float verticalSpeed;
     private float targetVerticalSpeed;
     private float verticalSpeedVelocity;
 
@@ -39,50 +44,46 @@ public class PlayerController : MonoBehaviour
     private float targetHorizontalSpeed;
     private float horizontalSpeedVelocity;
 
-    public Vector3 relativePlayerVelocity;
-    
+    private Vector3 relativePlayerVelocity;
+
+
 
     [Header("Stats")]
     public PlayerStatsModel playerStats;
 
     [Header("Gravity")]
     public float gravity = 10;
-
+    public LayerMask groundMask;
     private Vector3 gravityDirection;
 
     [Header("Falling / Jumping")]
-    public float fallingSpeed;
-    public float fallingSpeedPeak;
-    public float fallingThreashold;
+    private float fallingSpeed;
+    private float fallingSpeedPeak;
+    public float fallingThreshold;
+    public float fallingMovementSpeed;
+    public float fallingRunningMovementSpeed;
+    private bool jumpingTriggered;
+    private bool fallingTriggered;
 
-    public bool jumpingTriggered;
-    public bool fallingTriggered;
-
-  //  public bool isMoving; 
+    //  public bool isMoving; 
 
 
 
     #region - Awake -
     private void Awake()
     {
-        characterController = GetComponent<CharacterController>();
+        characterRigidBody = GetComponent<Rigidbody>();
+        characterAnimator = GetComponent<Animator>();
 
-        CharacterAnimator = GetComponent<Animator>();
+        playerInputActions = new PlayerInputActions();
 
-        PlayerInputActions = new PlayerInputActions();
+        playerInputActions.Movement.Movement.performed += x => input_Movement = x.ReadValue<Vector2>();
+        playerInputActions.Movement.View.performed += x => input_View = x.ReadValue<Vector2>();
 
-        PlayerInputActions.Movement.Movement.performed += x => input_Movement = x.ReadValue<Vector2>();
-        PlayerInputActions.Movement.View.performed += x => input_View = x.ReadValue<Vector2>();
+        playerInputActions.Actions.Jump.performed += x => Jump();
 
-
-
-        PlayerInputActions.Actions.Jump.performed += x => Jump();
-        
-
-
-        PlayerInputActions.Actions.WalkingToggle.performed += x => ToggleWalking();
-
-        PlayerInputActions.Actions.Sprinting.performed += x => Sprint();
+        playerInputActions.Actions.WalkingToggle.performed += x => ToggleWalking();
+        playerInputActions.Actions.Sprinting.performed += x => Sprint();
 
         gravityDirection = Vector3.down;
 
@@ -98,25 +99,30 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
-
+        jumpingTriggered = true;
 
         if (IsMoving() && !isWalking)
         {
-            CharacterAnimator.SetTrigger("RunningJump");
+            characterAnimator.SetTrigger("RunningJump");
 
         }
+
         else
         {
-            CharacterAnimator.SetTrigger("Jump");
+            characterAnimator.SetTrigger("Jump");
 
         }
-        jumpingTriggered = true;
-        fallingTriggered = true;
-       
     }
+
     public void ApplyJumpForce()
     {
-       // currentGravity = settings.JumpingForce;
+        if (!IsGrounded())
+        {
+            return;
+        }
+
+        characterRigidBody.AddForce(transform.up * settings.JumpingForce, ForceMode.Impulse);
+        fallingTriggered = true;
     }
     #endregion
 
@@ -128,7 +134,8 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
-        if (playerStats.Stamina > (playerStats.MAxStamina / 4))
+
+        if (playerStats.Stamina > (playerStats.MaxStamina / 4))
         {
             isSprinting = true;
         }
@@ -139,22 +146,23 @@ public class PlayerController : MonoBehaviour
         {
             return false;
         }
-        var SprintFalloff = 0.8f;
 
-        if ((input_Movement.y < 0 ? input_Movement.y * -1 : input_Movement.y) < SprintFalloff && (input_Movement.x < 0 ? input_Movement.x * -1 : input_Movement.x) < SprintFalloff)
+        var sprintFalloff = 0.8f;
+
+        if ((input_Movement.y < 0 ? input_Movement.y * -1 : input_Movement.y) < sprintFalloff && (input_Movement.x < 0 ? input_Movement.x * -1 : input_Movement.x) < sprintFalloff)
         {
             return false;
         }
-        Debug.Log(input_Movement.y);
 
         return true;
     }
-    public void CalculateSprint()
+    private void CalculateSprint()
     {
         if (!CanSprint())
         {
             isSprinting = false;
         }
+
         if (isSprinting)
         {
             if (playerStats.Stamina > 0)
@@ -165,44 +173,49 @@ public class PlayerController : MonoBehaviour
             {
                 isSprinting = false;
             }
+
             playerStats.StaminaCurrentDelay = playerStats.StaminaDelay;
         }
         else
         {
             if (playerStats.StaminaCurrentDelay <= 0)
             {
-                if (playerStats.Stamina < playerStats.MAxStamina)
+                if (playerStats.Stamina < playerStats.MaxStamina)
                 {
                     playerStats.Stamina += playerStats.StaminaRestore * Time.deltaTime;
                 }
                 else
                 {
-                    playerStats.Stamina = playerStats.MAxStamina;
+                    playerStats.Stamina = playerStats.MaxStamina;
                 }
             }
             else
             {
                 playerStats.StaminaCurrentDelay -= Time.deltaTime;
             }
-
-
         }
     }
     #endregion
 
     #region - Gravity -
-    private bool isGrounded()
+    private bool IsGrounded()
     {
-        return characterController.isGrounded;
-    }
-
-    private bool isFalling()
-    {
-
-        if (fallingSpeed < fallingThreashold)
+        if (Physics.CheckSphere(transform.position, 0.2f, groundMask))
         {
             return true;
         }
+
+        return false;
+    }
+
+    private bool IsFalling()
+    {
+
+        if (fallingSpeed < fallingThreshold)
+        {
+            return true;
+        }
+
         return false;
 
     }
@@ -214,32 +227,30 @@ public class PlayerController : MonoBehaviour
     private void CalculateFalling()
     {
         fallingSpeed = relativePlayerVelocity.y;
-        if(isFalling() && fallingSpeed < fallingSpeedPeak )
+
+        if (fallingSpeed < fallingSpeedPeak && fallingSpeed < -0.1f && (fallingTriggered || jumpingTriggered))
         {
             fallingSpeedPeak = fallingSpeed;
         }
-        if( isFalling() && !isGrounded() && !jumpingTriggered && !fallingTriggered)
+
+        if ((IsFalling() && !IsGrounded() && !jumpingTriggered && !fallingTriggered) || (jumpingTriggered && !fallingTriggered && !IsGrounded()))
         {
-            //falling animation
             fallingTriggered = true;
-            CharacterAnimator.SetTrigger("Falling");
+            characterAnimator.SetTrigger("Falling");
         }
-        if (fallingTriggered && isGrounded() && fallingSpeed < -0.1f)
+
+        if (fallingTriggered && IsGrounded() && fallingSpeed < -0.1f)
         {
-            fallingTriggered = false; 
+            fallingTriggered = false;
             jumpingTriggered = false;
 
-            if (fallingSpeedPeak < -7) 
+            if (fallingSpeedPeak < -7)
             {
-                CharacterAnimator.SetTrigger("HardLand");
-              //  Debug.Log("hard land");
+                characterAnimator.SetTrigger("HardLand");
             }
             else
             {
-                CharacterAnimator.SetTrigger("Land");
-            //    Debug.Log("land");
-
-
+                characterAnimator.SetTrigger("Land");
             }
 
             fallingSpeedPeak = 0;
@@ -256,23 +267,43 @@ public class PlayerController : MonoBehaviour
         isWalking = !isWalking;
     }
 
+
     public bool IsMoving()
-    {   
+    {
         if (relativePlayerVelocity.x > 0.4f || relativePlayerVelocity.x < -0.4f)
         {
             return true;
         }
+
         if (relativePlayerVelocity.z > 0.4f || relativePlayerVelocity.z < -0.4f)
         {
             return true;
         }
-            return false;
+
+        return false;
     }
+
+
+    public bool IsInputMoving()
+    {
+        if (input_Movement.x > 0.2f || input_Movement.x < -0.2f)
+        {
+            return true;
+        }
+
+        if (input_Movement.y > 0.2f || input_Movement.y < -0.2f)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     public void Movement()
     {
-        CharacterAnimator.SetBool("IsTargetMode", isTargetMode);
+        characterAnimator.SetBool("IsTargetMode", isTargetMode);
 
-        relativePlayerVelocity = transform.InverseTransformDirection(characterController.velocity);
+        relativePlayerVelocity = transform.InverseTransformDirection(characterRigidBody.velocity);
 
         if (isTargetMode)
         {
@@ -289,54 +320,63 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            var originalRotation = transform.rotation;
+            var orginalRotation = transform.rotation;
             transform.LookAt(playerMovement + transform.position, Vector3.up);
             var newRotation = transform.rotation;
 
-            transform.rotation = Quaternion.Lerp(originalRotation, newRotation, settings.CharacterRotationSmoothdamp);
-            float PlayerSpeed = 0;
+            transform.rotation = Quaternion.Lerp(orginalRotation, newRotation, settings.CharacterRotationSmoothdamp);
+
+            float playerSpeed = 0;
 
             if (isSprinting)
             {
-                PlayerSpeed = settings.SprintingSpeed;
+                playerSpeed = settings.SprintingSpeed;
             }
             else
             {
-                PlayerSpeed = (isWalking ? settings.WalkingSpeed : settings.RunningSpeed);
+                playerSpeed = (isWalking ? settings.WalkingSpeed : settings.RunningSpeed);
             }
-            targetVerticalSpeed = PlayerSpeed;
-            targetHorizontalSpeed = PlayerSpeed;
 
-
+            targetVerticalSpeed = playerSpeed;
+            targetHorizontalSpeed = playerSpeed;
         }
-        targetVerticalSpeed = (targetVerticalSpeed * movementSpeedOffset) * input_Movement.y;      //// delete the ti;e.deltqti;e
-        targetHorizontalSpeed = (targetHorizontalSpeed * movementSpeedOffset) * input_Movement.x; ////
+
+        targetVerticalSpeed = (targetVerticalSpeed * movementSpeedOffset) * input_Movement.y;
+        targetHorizontalSpeed = (targetHorizontalSpeed * movementSpeedOffset) * input_Movement.x;
 
         verticalSpeed = Mathf.SmoothDamp(verticalSpeed, targetVerticalSpeed, ref verticalSpeedVelocity, movementSmoothdamp);
         horizontalSpeed = Mathf.SmoothDamp(horizontalSpeed, targetHorizontalSpeed, ref horizontalSpeedVelocity, movementSmoothdamp);
 
-
         if (isTargetMode)
         {
-            CharacterAnimator.SetFloat("Vertical", verticalSpeed);
-            CharacterAnimator.SetFloat("Horizontal", horizontalSpeed);
-
+            characterAnimator.SetFloat("Vertical", verticalSpeed);
+            characterAnimator.SetFloat("Horizontal", horizontalSpeed);
         }
         else
         {
-            float VerticalActualSpeed = verticalSpeed < 0 ? verticalSpeed * -1 : verticalSpeed;
-            float HorizontalActualSpeed = horizontalSpeed < 0 ? horizontalSpeed * -1 : horizontalSpeed;
+            float verticalActualSpeed = verticalSpeed < 0 ? verticalSpeed * -1 : verticalSpeed;
+            float horizontalActualSpeed = horizontalSpeed < 0 ? horizontalSpeed * -1 : horizontalSpeed;
 
+            float animatorVertical = verticalActualSpeed > horizontalActualSpeed ? verticalActualSpeed : horizontalActualSpeed;
 
-            float AnimatorVertical = VerticalActualSpeed > HorizontalActualSpeed ? VerticalActualSpeed : HorizontalActualSpeed;
-            CharacterAnimator.SetFloat("Vertical", AnimatorVertical);
-
+            characterAnimator.SetFloat("Vertical", animatorVertical);
         }
 
-        playerMovement = cameraController.transform.forward * verticalSpeed * Time.deltaTime;
-        playerMovement += cameraController.transform.right * horizontalSpeed * Time.deltaTime;
+        if (IsInputMoving())
+        {
+            playerMovement = cameraController.transform.forward * verticalSpeed;
+            playerMovement += cameraController.transform.right * horizontalSpeed;
+        }
 
-     //   characterController.Move( );
+        if (jumpingTriggered || IsFalling())
+        {
+            characterAnimator.applyRootMotion = false;
+            characterRigidBody.AddForce(playerMovement * (isWalking ? fallingMovementSpeed : fallingRunningMovementSpeed));
+        }
+        else
+        {
+            characterAnimator.applyRootMotion = true;
+        }
 
     }
     
@@ -348,11 +388,10 @@ public class PlayerController : MonoBehaviour
     {
         CalculateGravity();
         CalculateFalling();
-
         Movement();
         CalculateSprint();
 
-       // isMoving = IsMoving();
+        // isMoving = IsMoving();
 
 
     }
@@ -363,14 +402,22 @@ public class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
-        PlayerInputActions.Enable();
+        playerInputActions.Enable();
 
     }
     private void OneDisable ()
     {
-        PlayerInputActions.Disable();
+        playerInputActions.Disable();
 
     }
 
+    #endregion
+
+    #region - Gizmos -
+    private void OnDrawGizmosSelected()
+    {
+       // Gizmos.color = Color.red;
+       // Gizmos.DrawSphere(transform.position, 0.2f);
+    }
     #endregion
 }

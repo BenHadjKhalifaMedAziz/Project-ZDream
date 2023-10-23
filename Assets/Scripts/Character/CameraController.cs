@@ -11,18 +11,15 @@ public class CameraController : MonoBehaviour
 
     [Header("Settings")]
     public CameraSettingsModel settings;
-    private Vector3 movementVelocity;
-    public float movementSmoothTime = 0.1f;
+
 
     #region - Update -
     private void Update()
-    {
-
-
-
-        FollowPlayerCaameraTarget();
+    {  
         CameraRotation();
+        FollowPlayerCaameraTarget();
     }
+
     #endregion
 
     #region - Position/Rotation -
@@ -55,8 +52,8 @@ public class CameraController : MonoBehaviour
     }
     private void FollowPlayerCaameraTarget()
     {
-        transform.position = Vector3.SmoothDamp(transform.position, playerController.cameraTarger.position, ref movementVelocity, movementSmoothTime);
-
+        //   transform.position = Vector3.SmoothDamp(transform.position, playerController.cameraTarger.position, ref movementVelocity, movementSmoothTime);
+        transform.position = playerController.cameraTarger.position;
 
     }
     #endregion

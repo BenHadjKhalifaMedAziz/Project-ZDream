@@ -49,7 +49,7 @@ public static class Models
     public class PlayerStatsModel
     {
         public float Stamina;
-        public float MAxStamina;
+        public float MaxStamina; 
         public float StaminaDrain;
         public float StaminaRestore;
         public float StaminaDelay;
