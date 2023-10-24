@@ -1,5 +1,6 @@
 using UnityEngine;
 using static Models;
+using UnityEngine.UI;
 
 
 public class PlayerController : MonoBehaviour
@@ -71,8 +72,22 @@ public class PlayerController : MonoBehaviour
 
     //  public bool isMoving; 
 
+    [Header("plan b")]
+    public static int numberOfCoins;
+    public static bool isGameStarted;
+    // public Text nbCoinsText;
+    public AudioSource audioSource;
 
+    public AudioSource jumpAUdio ;
 
+    #region - Start - 
+    private void Start()
+    {
+        numberOfCoins = 0;
+       
+    }
+
+    #endregion
     #region - Awake -
     private void Awake()
     {
@@ -413,9 +428,11 @@ public class PlayerController : MonoBehaviour
         Movement();
         CalculateSprint();
 
+
+        // nbCoinsText.text = "Coins:" + PlayerController.numberOfCoins;
+
         // isMoving = IsMoving();
-
-
+      
     }
     #endregion
 

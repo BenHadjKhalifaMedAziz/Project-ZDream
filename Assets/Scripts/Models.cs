@@ -60,6 +60,16 @@ public static class Models
 
     }
 
+
+
+    //[Serializable]
+    //public class PlayercoinsModel
+    //{
+    //    [Header("coins")]
+    //    public static int numberOfCoins;
+    //}
+
+
     #endregion
 
 }
