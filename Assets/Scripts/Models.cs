@@ -19,6 +19,9 @@ public static class Models
         public float YClampMin = -40f;
         public float YClampMax = 40f;
 
+        public float SensitivityZoom;
+
+
         [Header("character")]
         public float CharacterRotationSmoothdamp = 1f;
     }
